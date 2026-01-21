@@ -137,9 +137,12 @@ def _ingest_safari(
     state_interval: int,
     progress_every: int,
 ) -> Dict[str, object]:
+    safari_path = Path(safari_db).expanduser()
+    if not safari_path.exists():
+        return {"seen": 0, "inserted": 0, "metadata_used": 0, "warning": f"Safari History.db not found at {safari_path}"}
     return _ingest_generic(
         source="safari",
-        db_path=Path(safari_db),
+        db_path=safari_path,
         snapshot_name="safari_snapshot.db",
         dest_db=dest_db,
         sql_base="""

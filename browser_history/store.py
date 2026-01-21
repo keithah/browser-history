@@ -69,6 +69,21 @@ def _ensure_global_unique(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _maybe_backfill_global_guard(conn: sqlite3.Connection) -> None:
+    """Populate global_dedupe for existing visits if empty to enforce global dedupe after upgrade."""
+    cur = conn.execute("SELECT COUNT(*) as c FROM global_dedupe")
+    count = cur.fetchone()["c"]
+    if count > 0:
+        return
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO global_dedupe (url, visited_ts, visit_id)
+        SELECT url, visited_ts, id FROM visits
+        """
+    )
+    conn.commit()
+
+
 def _ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -123,6 +138,7 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     )
     _ensure_global_unique(conn)
     _maybe_migrate_visit_unique(conn)
+    _maybe_backfill_global_guard(conn)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_visits_domain ON visits(domain);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_visits_category ON visits(category);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_visits_ts ON visits(visited_ts);")
@@ -223,6 +239,7 @@ def connect(db_path: Path = DEFAULT_DB) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
     _ensure_schema(conn)
     _ensure_fts(conn)
     return conn
@@ -297,7 +314,7 @@ def insert_visit(
                 (url, visited_ts, visit_id),
             )
         except sqlite3.IntegrityError:
-            # Another process won; reuse canonical visit_id.
+            # Another process won; reuse canonical visit_id and clean up the extra row.
             row = conn.execute(
                 "SELECT visit_id FROM global_dedupe WHERE url = ? AND visited_ts = ?", (url, visited_ts)
             ).fetchone()
