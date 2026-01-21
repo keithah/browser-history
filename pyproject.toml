@@ -1,0 +1,26 @@
+[project]
+name = "browser-history"
+version = "0.1.0"
+description = "CLI + MCP server to ingest and query browser history (Safari/Chrome/Firefox) with automatic labeling."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "mcp>=1.24.0",
+  "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0",
+]
+
+[project.scripts]
+browser-history = "browser_history.cli:main"
+browser-history-mcp = "browser_history.mcp_server:run"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["browser_history"]
