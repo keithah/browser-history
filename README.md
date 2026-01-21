@@ -2,6 +2,8 @@
 
 Local CLI + MCP server to ingest Safari/Chrome/Firefox/Edge/Brave history, auto-label visits, and answer quick questions (e.g., “list all the GitHub projects I visited”, “what AI sites have I hit recently”) without sending data anywhere.
 
+[![CI](https://github.com/keithah/browser-history/actions/workflows/ci.yml/badge.svg)](https://github.com/keithah/browser-history/actions/workflows/ci.yml)
+
 ## Features
 - Copies browser history DBs (Safari, Chrome, Firefox, Edge, Brave), converts timestamps, and stores into `data/history_store.db`.
 - Deduping: by default, ingestion dedupes globally on `url+timestamp` (enforced with a unique index) and also tracks per-source occurrences; you can switch to per-source dedupe with `--dedupe-scope source`.
@@ -43,3 +45,4 @@ Data lives in `data/history_store.db`; snapshots of browser DBs are kept in `dat
 - Classification is heuristic-only (no network/LLM calls). Add more patterns in `browser_history/classifier.py` if you want finer buckets.
 - To start fresh, remove `data/history_store.db` and re-run `ingest`.
 - Ingest state (progress, last seen timestamps, metadata count) is stored in `ingest_state` inside `data/history_store.db`; `browser-history stats` prints it per source so you can resume/monitor long runs. Each visit also stores occurrences (sources + raw timestamps) so you can see all browsers/profiles that hit the same page when using global dedupe.
+- Releasing/publishing: tags `v*` trigger a build; set `PYPI_API_TOKEN` in repo secrets to publish via the provided GitHub Actions workflow. CI runs tests on pushes/PRs across Python 3.9–3.12.
