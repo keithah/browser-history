@@ -14,7 +14,10 @@ def ask(question: str, limit: int = 20) -> Dict[str, object]:
         since=filters.get("since"),
         limit=limit,
     )
-    return {"filters": filters, "results": results}
+    filters_display = dict(filters)
+    if isinstance(filters_display.get("since"), dt.datetime):
+        filters_display["since"] = utils.iso(filters_display["since"])
+    return {"filters": filters_display, "results": results}
 
 
 def _interpret_question(question: str) -> Dict[str, object]:

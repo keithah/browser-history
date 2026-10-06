@@ -40,9 +40,12 @@ Data lives in `data/history_store.db`; snapshots of browser DBs are kept in `dat
 - Tools: `ingest_history(browser?, limit?, fetch_metadata=false, metadata_max=500?, dedupe_scope=global|source)` (browsers include safari/chrome/firefox/edge/brave/all), `query_history(category?, search?, domain?, source?, since?, limit)`, `ask_history(question, limit)`, `stats_history(since?, source?)`, `backfill_occurrences(source?, limit?)`.
 - Resource template: `resource://browser/history/recent/{limit}` returns recent visits as JSON.
 - Any MCP-capable client can connect over stdio; you don’t need extra configuration beyond pointing the client to the `browser-history-mcp` command.
+  - `ask_history` responses include filters with ISO timestamps so they serialize cleanly over MCP.
 
 ## Notes
 - Classification is heuristic-only (no network/LLM calls). Add more patterns in `browser_history/classifier.py` if you want finer buckets.
 - To start fresh, remove `data/history_store.db` and re-run `ingest`.
 - Ingest state (progress, last seen timestamps, metadata count) is stored in `ingest_state` inside `data/history_store.db`; `browser-history stats` prints it per source so you can resume/monitor long runs. Each visit also stores occurrences (sources + raw timestamps) so you can see all browsers/profiles that hit the same page when using global dedupe.
+- Upgrading from older DBs: global dedupe guard rows are backfilled automatically on first connect; if you see unexpected dedupes across sources, re-run ingest or backfill occurrences to refresh state.
 - Releasing/publishing: tags `v*` trigger a build; set `PYPI_API_TOKEN` in repo secrets to publish via the provided GitHub Actions workflow. CI runs tests on pushes/PRs across Python 3.9–3.12.
+- When `--browser` includes Safari but `History.db` is missing, ingest will emit a warning and continue with other browsers.

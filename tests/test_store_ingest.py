@@ -361,3 +361,19 @@ def test_metadata_max_counts_attempts(tmp_path, monkeypatch):
     assert stats["seen"] == 2
     assert stats["metadata_used"] == 1
     assert calls["count"] == 1
+
+
+def test_ingest_safari_missing_db_warns(tmp_path):
+    missing = tmp_path / "nope.db"
+    stats = ingest._ingest_safari(
+        safari_db=missing,
+        dest_db=tmp_path / "store.db",
+        limit=None,
+        fetch_metadata=False,
+        metadata_max=0,
+        dedupe_scope="global",
+        state_interval=0,
+        progress_every=0,
+    )
+    assert stats["seen"] == 0
+    assert "warning" in stats
